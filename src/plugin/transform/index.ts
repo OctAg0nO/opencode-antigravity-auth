@@ -20,6 +20,7 @@ export type {
 export {
   resolveModelWithTier,
   resolveModelWithVariant,
+  resolveModelForHeaderStyle,
   getModelFamily,
   MODEL_ALIASES,
   MODEL_FALLBACKS,

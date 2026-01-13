@@ -291,6 +291,60 @@ function budgetToGemini3Level(budget: number): "low" | "medium" | "high" {
 }
 
 /**
+ * Resolves model name for a specific headerStyle (quota fallback support).
+ * Transforms model names when switching between gemini-cli and antigravity quotas.
+ * 
+ * Issue #103: When quota fallback occurs, model names need to be transformed:
+ * - gemini-3-flash-preview (gemini-cli) → gemini-3-flash (antigravity)
+ * - gemini-3-pro-preview (gemini-cli) → gemini-3-pro-low (antigravity)
+ * - gemini-3-flash (antigravity) → gemini-3-flash-preview (gemini-cli)
+ */
+export function resolveModelForHeaderStyle(
+  requestedModel: string,
+  headerStyle: "antigravity" | "gemini-cli"
+): ResolvedModel {
+  const lower = requestedModel.toLowerCase();
+  const isGemini3 = lower.includes("gemini-3");
+  
+  if (!isGemini3) {
+    return resolveModelWithTier(requestedModel);
+  }
+
+  if (headerStyle === "antigravity") {
+    let transformedModel = requestedModel
+      .replace(/-preview$/i, "")
+      .replace(/^antigravity-/i, "");
+    
+    const isGemini3Pro = transformedModel.toLowerCase().startsWith("gemini-3-pro");
+    const hasTierSuffix = /-(low|medium|high)$/i.test(transformedModel);
+    
+    if (isGemini3Pro && !hasTierSuffix) {
+      transformedModel = `${transformedModel}-low`;
+    }
+    
+    const prefixedModel = `antigravity-${transformedModel}`;
+    return resolveModelWithTier(prefixedModel);
+  }
+  
+  if (headerStyle === "gemini-cli") {
+    let transformedModel = requestedModel
+      .replace(/^antigravity-/i, "")
+      .replace(/-(low|medium|high)$/i, "");
+    
+    if (!transformedModel.endsWith("-preview")) {
+      transformedModel = `${transformedModel}-preview`;
+    }
+    
+    return {
+      ...resolveModelWithTier(transformedModel),
+      quotaPreference: "gemini-cli",
+    };
+  }
+
+  return resolveModelWithTier(requestedModel);
+}
+
+/**
  * Resolves model with variant config from providerOptions.
  * Variant config takes priority over tier suffix in model name.
  */

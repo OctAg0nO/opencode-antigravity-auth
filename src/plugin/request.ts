@@ -58,6 +58,7 @@ import { isGemini3Model } from "./transform";
 import {
   resolveModelWithTier,
   resolveModelWithVariant,
+  resolveModelForHeaderStyle,
   isClaudeModel,
   isClaudeThinkingModel,
   CLAUDE_THINKING_MAX_OUTPUT_TOKENS,
@@ -626,8 +627,7 @@ export function prepareAntigravityRequest(
   const [, rawModel = "", rawAction = ""] = match;
   const requestedModel = rawModel;
 
-  // Use model resolver for tier-based thinking configuration
-  const resolved = resolveModelWithTier(rawModel);
+  const resolved = resolveModelForHeaderStyle(rawModel, headerStyle);
   const effectiveModel = resolved.actualModel;
 
   const streaming = rawAction === STREAM_ACTION;
